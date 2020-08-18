@@ -762,6 +762,12 @@ var postcalls = [
                 filterKey: 'UserName',
                 filterValue: 'UserName',
                 rateLimit: 100
+            },
+            getServerCertificate: {
+                reliesOnService: 'iam',
+                reliesOnCall: 'listServerCertificates',
+                filterKey: 'ServerCertificateName',
+                filterValue: 'ServerCertificateName'
             }
         },
         Kinesis: {
