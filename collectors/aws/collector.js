@@ -838,6 +838,12 @@ var postcalls = [
                 reliesOnCall: 'listIdentities',
                 override: true,
                 rateLimit: 1000
+            },
+            listIdentityPolicies: {
+                reliesOnCall: 'ses',
+                reliesOnService: 'listIdentities',
+                override: true,
+                rateLimit: 1000
             }
         },
         SNS: {
