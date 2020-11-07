@@ -21,35 +21,47 @@ module.exports = {
         var regions = helpers.regions(settings);
 
         async.each(regions.elb, function(region, rcb){
+            var appElbFound = false;
             var describeLoadBalancers = helpers.addSource(cache, source,
                 ['elbv2', 'describeLoadBalancers', region]);
-
             if (!describeLoadBalancers) return rcb();
 
             if (describeLoadBalancers.err || !describeLoadBalancers.data) {
                 helpers.addResult(results, 3,
-                    'Unable to query for load balancers: ' + helpers.addError(describeLoadBalancers), region);
+                    `Unable to query for Load Balancers: ${helpers.addError(describeLoadBalancers)}`, region);
                 return rcb();
             }
 
             if (!describeLoadBalancers.data.length) {
-                helpers.addResult(results, 0, 'No load balancers present', region);
+                helpers.addResult(results, 0, 'No Load Balancers found', region);
                 return rcb();
             }
 
             async.each(describeLoadBalancers.data, function(lb, cb){
+                if(lb.Type !== 'application') return cb();
+                var elbArn = lb.LoadBalancerArn;
+                appElbFound = true;
+
                 var describeListeners = helpers.addSource(cache, source,
                     ['elbv2', 'describeListeners', region, lb.DNSName]);
+
+                if (describeListeners.err || !describeListeners.data) {
+                    helpers.addResult(results, 3,
+                        `Unable to query for Load Balancers Listeners: ${helpers.addError(describeLoadBalancers)}`,
+                        region, lb.Arn);
+                    return cb();
+                }
 
                 // loop through listeners
                 var non_https_listener = [];
                 var noListeners = true;
-                var elbArn = lb.LoadBalancerArn;
+
                 if (describeListeners.data && describeListeners.data.Listeners && describeListeners.data.Listeners.length) {
                     noListeners = false;
+
                     describeListeners.data.Listeners.forEach(function(listener){
                         // if it is not https add errors to results
-                        if (listener.Protocol !== 'HTTPS' && listener.Listener.Protocol !== 'SSL'){
+                        if (listener.Protocol !== 'HTTPS') {
                             non_https_listener.push(
                                 listener.Protocol + ' / ' +
                                 listener.Port
@@ -58,17 +70,27 @@ module.exports = {
 
                     });
                 }
+
                 if (non_https_listener && non_https_listener.length){
-                    var msg = 'The following listeners are not using HTTPS-only: ';
                     helpers.addResult(results, 2,
-                        msg + non_https_listener.join(', '), region, elbArn);
-                }else if (non_https_listener && !non_https_listener.length) {
-                    helpers.addResult(results, 0, 'All listeners are HTTPS-only', region, elbArn);
+                        `The following listeners are not using HTTPS-only: ${non_https_listener.join(', ')}`,
+                        region, elbArn);
+                } else if (non_https_listener && !non_https_listener.length && !noListeners) {
+                    helpers.addResult(results, 0,
+                        'All listeners are HTTPS-only',
+                        region, elbArn);
                 } else if (noListeners) {
-                    helpers.addResult(results, 0, 'No listeners found', region, elbArn);
+                    helpers.addResult(results, 0,
+                        'No listeners found', region, elbArn);
                 }
+
                 cb();
             }, function(){
+                if(!appElbFound) {
+                    helpers.addResult(results, 0,
+                        'No Application Load Balancers found', region);
+                }
+
                 rcb();
             });
         }, function(){

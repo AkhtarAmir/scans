@@ -26,26 +26,38 @@ module.exports = {
 
             if (describeLoadBalancers.err || !describeLoadBalancers.data) {
                 helpers.addResult(results, 3,
-                    'Unable to query for load balancers: ' + helpers.addError(describeLoadBalancers), region);
+                    `Unable to query for load balancers: ${helpers.addError(describeLoadBalancers)}`, region);
                 return rcb();
             }
 
             if (!describeLoadBalancers.data.length) {
-                helpers.addResult(results, 0, 'No load balancers present', region);
+                helpers.addResult(results, 0, 'No load balancers found', region);
                 return rcb();
             }
 
             async.each(describeLoadBalancers.data, function(lb, cb){
+                var resource = lb.LoadBalancerArn;
+
                 var describeTargetGroups = helpers.addSource(cache, source,
                     ['elbv2', 'describeTargetGroups', region, lb.DNSName]);
 
-                var elbArn = lb.LoadBalancerArn;
-                if (describeTargetGroups.data && describeTargetGroups.data.TargetGroups && describeTargetGroups.data.TargetGroups.length){
-                    helpers.addResult(results, 0,
-                        'ELB has ' + describeTargetGroups.data.TargetGroups.length + ' target groups', region, elbArn);
-                } else {
-                    helpers.addResult(results, 2, 'ELB does not have target groups ', region, elbArn);
+                if (!describeTargetGroups || describeTargetGroups.err || !describeTargetGroups.data) {
+                    helpers.addResult(results, 3,
+                        `Unable to query for load balancers target groups: ${helpers.addError(describeTargetGroups)}`,
+                        region, resource);
+                    return cb();
                 }
+
+                if (describeTargetGroups.data.TargetGroups && describeTargetGroups.data.TargetGroups.length){
+                    helpers.addResult(results, 0,
+                        `ELB has ${describeTargetGroups.data.TargetGroups.length} target groups`,
+                        region, resource);
+                } else {
+                    helpers.addResult(results, 2,
+                        'ELB does not have target groups',
+                        region, resource);
+                }
+
                 cb();
             }, function(){
                 rcb();

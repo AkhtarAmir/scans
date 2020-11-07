@@ -35,39 +35,50 @@ module.exports = {
 
             if (describeLoadBalancers.err || !describeLoadBalancers.data) {
                 helpers.addResult(results, 3,
-                    'Unable to query for load balancers: ' + helpers.addError(describeLoadBalancers), region);
+                    `Unable to query for load balancers: ${helpers.addError(describeLoadBalancers)}`, region);
                 return rcb();
             }
 
             if (!describeLoadBalancers.data.length) {
-                helpers.addResult(results, 0, 'No load balancers present', region);
+                helpers.addResult(results, 0, 'No load balancers found', region);
                 return rcb();
             }
 
             async.each(describeLoadBalancers.data, function(lb, cb){
-                // loop through listeners
+                var resource =  lb.LoadBalancerArn;
+                // loop through attributes
                 var describeLoadBalancerAttributes = helpers.addSource(cache, source,
                     ['elbv2', 'describeLoadBalancerAttributes', region, lb.DNSName]);
 
-                if ( describeLoadBalancerAttributes.data &&
-                    describeLoadBalancerAttributes.data.Attributes &&
+                if (!describeLoadBalancerAttributes || describeLoadBalancerAttributes.err || !describeLoadBalancerAttributes.data) {
+                    helpers.addResult(results, 3,
+                        `Unable to query for load balancers attributes: ${helpers.addError(describeLoadBalancerAttributes)}`,
+                        region, resource);
+                    return cb();
+                }
+
+                if (describeLoadBalancerAttributes.data.Attributes &&
                     describeLoadBalancerAttributes.data.Attributes.length) {
                     for (let attribute of describeLoadBalancerAttributes.data.Attributes) {
                         if (attribute.Key && attribute.Key === 'access_logs.s3.enabled') {
                             if (attribute.Value === 'false') {
                                 helpers.addResult(results, 2,
-                                    'Logging not enabled for ' + lb.DNSName, region, lb.LoadBalancerArn);
+                                    `Logging is not enabled for "${lb.DNSName}"`,
+                                    region, resource);
                             } else {
                                 helpers.addResult(results, 0,
-                                    'Logging enabled for ' + lb.DNSName, region, lb.LoadBalancerArn);
+                                    `Logging is enabled for "${lb.DNSName}"`,
+                                    region, resource);
                             }
                             break;
                         }
                     }
                 } else {
                     helpers.addResult(results, 2,
-                        'no load balancer attributes found for: ' + lb.DNSName, region, lb.LoadBalancerArn);
+                        `No load balancer attributes found for: ${lb.DNSName}`,
+                        region, resource);
                 }
+
                 cb();
             }, function(){
                 rcb();
