@@ -46,6 +46,7 @@ module.exports = {
         'globalLoggingDuplicated'       : require(__dirname + '/plugins/aws/cloudtrail/globalLoggingDuplicated.js'),
 
         'configServiceEnabled'          : require(__dirname + '/plugins/aws/configservice/configServiceEnabled.js'),
+        'missingS3Bucket'               : require(__dirname + '/plugins/aws/configservice/missingS3Bucket.js'),
 
         'dmsEncryptionEnabled'          : require(__dirname + '/plugins/aws/dms/dmsEncryptionEnabled.js'),
 

@@ -157,6 +157,9 @@ var calls = {
         },
         describeConfigurationRecorderStatus: {
             property: 'ConfigurationRecordersStatus'
+        },
+        describeDeliveryChannels: {
+            property: 'DeliveryChannels'
         }
     },
     DirectConnect: {
