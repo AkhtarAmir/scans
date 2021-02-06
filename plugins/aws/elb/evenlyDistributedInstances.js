@@ -42,18 +42,22 @@ module.exports = {
                 var describeLoadBalancerAttributes = helpers.addSource(cache, source,
                     ['elb', 'describeLoadBalancerAttributes', region, lb.DNSName]);
 
-                if (!describeLoadBalancerAttributes.data || 
-                    !describeLoadBalancerAttributes.data.LoadBalancerAttributes || 
-                    !describeLoadBalancerAttributes.data.LoadBalancerAttributes.CrossZoneLoadBalancing) {
+                if (!describeLoadBalancerAttributes ||
+                    describeLoadBalancerAttributes.err ||
+                    !describeLoadBalancerAttributes.data || 
+                    !describeLoadBalancerAttributes.data.LoadBalancerAttributes) {
                     helpers.addResult(results, 3,
-                        `Unable to query for load balancer attributes for "${lb.LoadBalancerName}": ${helpers.addError(describeLoadBalancerAttributes)}`,
+                        `Unable to query load balancer attributes: ${helpers.addError(describeLoadBalancerAttributes)}`,
                         region, resource);
                     return cb();
                 }
 
-                var crossZoneLoadBalancing = describeLoadBalancerAttributes.data.LoadBalancerAttributes.CrossZoneLoadBalancing;
-                if (crossZoneLoadBalancing.Enabled) {
-                    if (lb.AvailabilityZones && lb.AvailabilityZones.length && lb.Instances && lb.Instances.length <= lb.AvailabilityZones.length) {
+                if (describeLoadBalancerAttributes.data.LoadBalancerAttributes.CrossZoneLoadBalancing &&
+                    describeLoadBalancerAttributes.data.LoadBalancerAttributes.CrossZoneLoadBalancing.Enabled) {
+                    
+
+                    if (lb.AvailabilityZones && lb.AvailabilityZones.length && lb.Instances && lb.Instances.length &&
+                        lb.Instances.length <= lb.AvailabilityZones.length) {
                         helpers.addResult(results, 0,
                             `AWS ELB "${lb.LoadBalancerName}" has evenly distributed instances across availability zones`,
                             region, resource);
