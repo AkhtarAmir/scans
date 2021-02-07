@@ -46,7 +46,7 @@ const describeLoadBalancers = [
         "VPCId": "vpc-99de2fe4",
         "Instances": [
             {
-                "InstanceId": "i-093267d7a579c4bee",
+                "InstanceId": "i-0e5b41e1d67462547",
                 "InstanceType": "t2.micro",
                 "AvailabilityZone": "us-east-1a",
                 "LifecycleState": "InService",
@@ -115,7 +115,7 @@ const describeLoadBalancers = [
         "VPCId": "vpc-99de2fe4",
         "Instances": [
             {
-                "InstanceId": "i-093267d7a579c4bee",
+                "InstanceId": "i-0e5b41e1d67462547",
                 "InstanceType": "t2.micro",
                 "AvailabilityZone": "us-east-1a",
                 "LifecycleState": "InService",
@@ -128,7 +128,7 @@ const describeLoadBalancers = [
                 "ProtectedFromScaleIn": false
             },
             {
-                "InstanceId": "i-093267d7a579c4bee",
+                "InstanceId": "i-0e5b41e1d67462547",
                 "InstanceType": "t2.micro",
                 "AvailabilityZone": "us-east-1a",
                 "LifecycleState": "InService",
@@ -209,7 +209,94 @@ const describeLoadBalancerAttributes = [
     }
 ];
 
-const createCache = (describeLoadBalancers, describeLoadBalancerAttributes, describeLoadBalancersErr, describeLoadBalancerAttributesErr) => {
+const describeInstances = [
+    {
+        "Groups": [],
+        "Instances": [
+            {
+                "AmiLaunchIndex": 0,
+                "ImageId": "ami-0947d2ba12ee1ff75",
+                "InstanceId": "i-0e5b41e1d67462547",
+                "InstanceType": "t2.micro",
+                "KeyName": "auto-scaling-test-instance",
+                "LaunchTime": "2020-12-05T18:35:50+00:00",
+                "Monitoring": {
+                    "State": "disabled"
+                },
+                "Placement": {
+                    "AvailabilityZone": "us-east-1c",
+                    "GroupName": "",
+                    "Tenancy": "default"
+                },
+                "PrivateDnsName": "ip-172-31-28-46.ec2.internal",
+                "PrivateIpAddress": "172.31.28.46",
+                "ProductCodes": [],
+                "PublicDnsName": "",
+                "State": {
+                    "Code": 80,
+                    "Name": "stopped"
+                },
+                "StateTransitionReason": "User initiated (2020-12-05 19:35:13 GMT)",
+                "SubnetId": "subnet-aac6b3e7",
+                "VpcId": "vpc-99de2fe4",
+                "Architecture": "x86_64",
+                "BlockDeviceMappings": [],
+                "ClientToken": "",
+                "EbsOptimized": false,
+                "EnaSupport": true,
+                "Hypervisor": "xen",
+                "IamInstanceProfile": {
+                    "Arn": "arn:aws:iam::111122223333:instance-profile/AmazonSSMRoleForInstancesQuickSetup",
+                    "Id": "AIPAYE32SRU53G7VOI2UM"
+                },
+                "NetworkInterfaces": [],
+                "RootDeviceName": "/dev/xvda",
+                "RootDeviceType": "ebs",
+                "SecurityGroups": [
+                    {
+                        "GroupName": "launch-wizard-1",
+                        "GroupId": "sg-02d95f133690f7400"
+                    }
+                ],
+                "SourceDestCheck": true,
+                "StateReason": {
+                    "Code": "Client.UserInitiatedShutdown",
+                    "Message": "Client.UserInitiatedShutdown: User initiated shutdown"
+                },
+                "Tags": [
+                    {
+                        "Key": "app-tier",
+                        "Value": "app-tier"
+                    }
+                ],
+                "VirtualizationType": "hvm",
+                "CpuOptions": {
+                    "CoreCount": 1,
+                    "ThreadsPerCore": 1
+                },
+                "CapacityReservationSpecification": {
+                    "CapacityReservationPreference": "open"
+                },
+                "HibernationOptions": {
+                    "Configured": false
+                },
+                "MetadataOptions": {
+                    "State": "applied",
+                    "HttpTokens": "optional",
+                    "HttpPutResponseHopLimit": 1,
+                    "HttpEndpoint": "enabled"
+                },
+                "EnclaveOptions": {
+                    "Enabled": false
+                }
+            }
+        ],
+        "OwnerId": "111122223333",
+        "ReservationId": "r-087ce52925d75c272"
+    }
+];
+
+const createCache = (describeLoadBalancers, describeLoadBalancerAttributes, describeInstances, describeLoadBalancersErr, describeLoadBalancerAttributesErr, describeInstancesErr) => {
     var dnsName = (describeLoadBalancers && describeLoadBalancers.length) ? describeLoadBalancers[0].DNSName : null;
 
     return {
@@ -228,6 +315,14 @@ const createCache = (describeLoadBalancers, describeLoadBalancerAttributes, desc
                     }
                 }
             },
+        },
+        ec2: {
+            describeInstances: {
+                'us-east-1': {
+                    err: describeInstancesErr,
+                    data: describeInstances
+                }
+            }
         }
     };
 };
@@ -245,7 +340,7 @@ const createNullCache = () => {
 describe('evenlyDistributedInstances', function () {
     describe('run', function () {
         it('should PASS if AWS ELB has evenly distributed instances across availability zones', function (done) {
-            const cache = createCache([describeLoadBalancers[0]], describeLoadBalancerAttributes[0]);
+            const cache = createCache([describeLoadBalancers[0]], describeLoadBalancerAttributes[0], describeInstances);
             evenlyDistributedInstances.run(cache, {}, (err, results) => {
                 expect(results.length).to.equal(1);
                 expect(results[0].status).to.equal(0);
@@ -255,7 +350,7 @@ describe('evenlyDistributedInstances', function () {
         });
 
         it('should FAIL if AWS ELB does not have evenly distributed instances across availability zones', function (done) {
-            const cache = createCache([describeLoadBalancers[1]], describeLoadBalancerAttributes[0]);
+            const cache = createCache([describeLoadBalancers[1]], describeLoadBalancerAttributes[0], describeInstances);
             evenlyDistributedInstances.run(cache, {}, (err, results) => {
                 expect(results.length).to.equal(1);
                 expect(results[0].status).to.equal(2);
@@ -265,7 +360,7 @@ describe('evenlyDistributedInstances', function () {
         });
 
         it('should FAIL if AWS ELB does not have cross zone load balancing enabled', function (done) {
-            const cache = createCache([describeLoadBalancers[1]], describeLoadBalancerAttributes[1]);
+            const cache = createCache([describeLoadBalancers[1]], describeLoadBalancerAttributes[1], describeInstances);
             evenlyDistributedInstances.run(cache, {}, (err, results) => {
                 expect(results.length).to.equal(1);
                 expect(results[0].status).to.equal(2);
@@ -285,7 +380,7 @@ describe('evenlyDistributedInstances', function () {
         });
 
         it('should UNKNOWN if unable to query for load balancer attributes', function (done) {
-            const cache = createCache([describeLoadBalancers[0]], describeLoadBalancerAttributes[1], { message: 'Unable to query for load balancers' });
+            const cache = createCache([describeLoadBalancers[0]], describeLoadBalancerAttributes[1], describeInstances, { message: 'Unable to query for load balancers' });
             evenlyDistributedInstances.run(cache, {}, (err, results) => {
                 expect(results.length).to.equal(1);
                 expect(results[0].status).to.equal(3);
@@ -295,7 +390,17 @@ describe('evenlyDistributedInstances', function () {
         });
 
         it('should UNKNOWN if unable to query for load balancer attributes', function (done) {
-            const cache = createCache([describeLoadBalancers[0]], null, null, { message: 'Unable to query for load balancers attributes' });
+            const cache = createCache([describeLoadBalancers[0]], null, describeInstances, null, { message: 'Unable to query for load balancers attributes' });
+            evenlyDistributedInstances.run(cache, {}, (err, results) => {
+                expect(results.length).to.equal(1);
+                expect(results[0].status).to.equal(3);
+                expect(results[0].region).to.equal('us-east-1');
+                done();
+            });
+        });
+
+        it('should UNKNOWN if unable to query for EC2 instances', function (done) {
+            const cache = createCache([describeLoadBalancers[0]], describeLoadBalancerAttributes[1], describeInstances, null, null, { message: 'Unable to query for EC2 instances' });
             evenlyDistributedInstances.run(cache, {}, (err, results) => {
                 expect(results.length).to.equal(1);
                 expect(results[0].status).to.equal(3);
