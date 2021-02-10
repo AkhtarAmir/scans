@@ -549,6 +549,37 @@ function remediateOpenPorts(putCall, pluginName, protocol, port, config, cache, 
     });
 }
 
+function isPrivateSubnet(vpcId, cache, region) {
+    var describeSubnets = helpers.addSource(cache, {},
+        ['ec2', 'describeSubnets', region, vpcId]);
+
+    if (!describeSubnets || describeSubnets.err || !describeSubnets.data || !describeSubnets.data.Subnets) {
+        return false;
+    }
+
+    // if (!describeSubnets || describeSubnets.err || !describeSubnets.data) {
+    //     helpers.addResult(results, 3,
+    //         'Unable to query for VPC subnets: ' + helpers.addError(describeSubnets),
+    //         region, vpcId);
+    //     return rcb();
+    // }
+
+    // if (!describeSubnets.data.length) {
+    //     helpers.addResult(results, 0,
+    //         'No VPC subnets present',
+    //         region, vpcId);
+    //     return rcb();
+    // }
+
+    for (var subnet of describeSubnets.data.Subnets) {
+        if (subnet.CidrBlock === '0.0.0.0/0') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 module.exports = {
     addResult: addResult,
     findOpenPorts: findOpenPorts,
@@ -563,5 +594,6 @@ module.exports = {
     nullArray: nullArray,
     divideArray:divideArray,
     remediatePasswordPolicy:remediatePasswordPolicy,
-    remediateOpenPorts: remediateOpenPorts
+    remediateOpenPorts: remediateOpenPorts,
+    isPrivateSubnet: isPrivateSubnet
 };

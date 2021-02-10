@@ -8,7 +8,7 @@ module.exports = {
     more_info: 'Security groups should be created on a per-service basis and avoid allowing all ports or protocols.',
     link: 'http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html',
     recommended_action: 'Modify the security group to specify a specific port and protocol to allow.',
-    apis: ['EC2:describeSecurityGroups'],
+    apis: ['EC2:describeSecurityGroups', 'EC2:describeVpcs', 'EC2:describeSubnets'],
     compliance: {
         hipaa: 'HIPAA requires strict access controls to networks and services ' +
                 'processing sensitive data. Security groups are the built-in ' +
@@ -45,6 +45,8 @@ module.exports = {
             var groups = describeSecurityGroups.data;
 
             for (var g in groups) {
+                var isPrivateSubnet = helpers.isPrivateSubnet(groups[g].VpcId, cache, region);
+
                 var strings = [];
                 var resource = 'arn:aws:ec2:' + region + ':' +
                                groups[g].OwnerId + ':security-group/' +
@@ -91,11 +93,15 @@ module.exports = {
                 }
 
                 if (strings.length) {
-                    helpers.addResult(results, 2,
-                        'Security group: ' + groups[g].GroupId +
-                        ' (' + groups[g].GroupName +
-                        ') has ' + strings.join(' and '), region,
-                        resource);
+                    if (isPrivateSubnet) {
+                        helpers.addResult(results, 0,
+                            `Security group: ${groups[g].GroupId} (${groups[g].GroupName}) has ${strings.join(' and ')}`,
+                            region, resource);
+                    } else {
+                        helpers.addResult(results, 2,
+                            `Security group: ${groups[g].GroupId} (${groups[g].GroupName}) has ${strings.join(' and ')}`,
+                            region, resource);
+                    }
                 }
             }
 
