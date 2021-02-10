@@ -45,7 +45,7 @@ module.exports = {
             var groups = describeSecurityGroups.data;
 
             for (var g in groups) {
-                var isPrivateSubnet = helpers.isPrivateSubnet(groups[g].VpcId, cache, region);
+                var privateSubnet = helpers.isPrivateSubnet(groups[g].VpcId, cache, region, rcb, results);
 
                 var strings = [];
                 var resource = 'arn:aws:ec2:' + region + ':' +
@@ -93,7 +93,7 @@ module.exports = {
                 }
 
                 if (strings.length) {
-                    if (isPrivateSubnet) {
+                    if (privateSubnet) {
                         helpers.addResult(results, 0,
                             `Security group: ${groups[g].GroupId} (${groups[g].GroupName}) has ${strings.join(' and ')}`,
                             region, resource);
