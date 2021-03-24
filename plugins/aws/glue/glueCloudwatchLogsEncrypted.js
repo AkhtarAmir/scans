@@ -45,7 +45,7 @@ module.exports = {
                 if(configuration.EncryptionConfiguration &&
                     configuration.EncryptionConfiguration.CloudWatchEncryption &&
                     configuration.EncryptionConfiguration.CloudWatchEncryption.CloudWatchEncryptionMode &&
-                    configuration.EncryptionConfiguration.CloudWatchEncryption.CloudWatchEncryptionMode === 'SSE-KMS') {
+                    configuration.EncryptionConfiguration.CloudWatchEncryption.CloudWatchEncryptionMode.toUpperCase() === 'SSE-KMS') {
                     helpers.addResult(results, 0,
                         `Glue Security Configuration "${configuration.Name}" has CloudWatch logs encryption enabled`,
                         region, resource);
