@@ -40,7 +40,7 @@ module.exports = {
                 return rcb();
             }
 
-            helpers.findOpenAllPorts(firewalls.data, region, results);
+            helpers.findOpenAllPorts(firewalls.data, region, results, cache, callback, source);
 
             rcb();
         }, function(){
@@ -48,4 +48,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};
