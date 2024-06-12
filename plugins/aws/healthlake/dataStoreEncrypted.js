@@ -19,6 +19,7 @@ module.exports = {
             regex: '^(awskms|awscmk|externalcmk|cloudhsm)$',
             default: 'awscmk'
         }
+        
     },
     realtime_triggers: ['healthlake:CreateFHIRDatastore', 'healthlake:DeleteFHIRDatastore'],
 
