@@ -407,7 +407,7 @@ function hasFailures(roleFailures) {
         if (roleFailures.managed.allActionsSelectedResources.length) return true;
         if (roleFailures.managed.actionsAllResources.length) return true;
         if (Object.keys(roleFailures.managed.wildcardActions).length) return true;
-        if (roleFailures.managed.regexMismatch.length) return true;
+        if (Object.keys(roleFailures.managed.regexMismatch).length) return true;
     }
     
     if (roleFailures.inline) {
@@ -415,17 +415,18 @@ function hasFailures(roleFailures) {
         if (roleFailures.inline.allActionsSelectedResources.length) return true;
         if (roleFailures.inline.actionsAllResources.length) return true;
         if (Object.keys(roleFailures.inline.wildcardActions).length) return true;
-        if (roleFailures.inline.regexMismatch.length) return true;
+        if (Object.keys(roleFailures.inline.regexMismatch).length) return true;
     }
     
     return false;
 }
 
 function formatPolicyNames(policyArray) {
-    if (policyArray.length <= 5) {
-        return [...new Set(policyArray)].join('", "');
+    const uniquePolicies = [...new Set(policyArray)];
+    if (uniquePolicies.length <= 5) {
+        return uniquePolicies.join('", "');
     }
-    return [...new Set(policyArray)].slice(0, 5).join('", "') + '" and so on...';
+    return uniquePolicies.slice(0, 5).join('", "') + '" and so on...';
 }
 
 function compileSimpleResults(roleFailures, role, results, custom) {

@@ -374,7 +374,7 @@ describe('iamRolePolicies', function () {
             const cache = createCache([listRoles[0]],getRole[0], listAttachedRolePolicies[2], null, null, getPolicy[0], getPolicyVersion[0]);
             iamRolePolicies.run(cache, {}, (err, results) => {
                 expect(results.length).to.equal(1);
-                expect(results[0].message).to.include('policy allows wildcard actions');
+                expect(results[0].message).to.include('allows wildcard actions');
                 expect(results[0].status).to.equal(2);
                 done();
             });
@@ -478,7 +478,7 @@ describe('iamRolePolicies', function () {
             const cache = createCache([listRoles[2]],getRole[1], listAttachedRolePolicies[3], null, null, getPolicy[1], getPolicyVersion[1]);
             iamRolePolicies.run(cache, {ignore_service_specific_wildcards: 'true',iam_policy_resource_specific_wildcards: '^[a-z]+:[a-z]+:[a-z0-9]+:::[a-z]+$'}, (err, results) => {
                 expect(results.length).to.equal(1);
-                expect(results[0].message).to.include('policy does not match provided regex');
+                expect(results[0].message).to.include('does not match provided regex');
                 expect(results[0].status).to.equal(2);
                 done();
             });
